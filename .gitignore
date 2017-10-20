@@ -1,0 +1,3 @@
+node_modules
+src/components/config.bitly.js
+src/components/config.twitter.js

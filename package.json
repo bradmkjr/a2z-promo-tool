@@ -1,0 +1,34 @@
+{
+  "name": "a2z-promo-tool",
+  "version": "1.0.0",
+  "description": "Load promos from Amazon and publish to Twitter",
+  "main": "app.js",
+  "dependencies": {
+    "bitly": "^4.1.1",
+    "oauth": "^0.9.15",
+    "oauth2": "0.0.1",
+    "twit": "^2.2.9"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bradmkjr/a2z-promo-tool.git"
+  },
+  "keywords": [
+    "amazon",
+    "promotion",
+    "oauth",
+    "twitter",
+    "affiliate",
+    "associates"
+  ],
+  "author": "Bradford Knowlton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bradmkjr/a2z-promo-tool/issues"
+  },
+  "homepage": "https://github.com/bradmkjr/a2z-promo-tool#readme"
+}
