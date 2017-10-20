@@ -1,1 +1,4 @@
-module.exports = { 'accessToken': 'ACCESS_TOKEN', 'domain': 'amzn.to' }
+module.exports = { 
+					accessToken: 'ACCESS_TOKEN', 
+					domain: 'amzn.to' 
+				}
