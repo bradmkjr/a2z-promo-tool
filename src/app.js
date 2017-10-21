@@ -2,6 +2,8 @@ var fs = require('fs');
 var express = require('express');
 var app = express();
 
+var Jimp = require("jimp");
+
 var Bitly = require('bitly');
 var Twit = require('twit');
 
@@ -10,9 +12,13 @@ var db = new sqlite3.Database('./src/data/database.db');
 
 var htmlparser = require("htmlparser");
 
+var cheerio = require('cheerio');
+var request = require('request');
+
 var category = '';
 var coupon = '';
 var description = '';
+var amazonImg = '';
 var amazonURL = '';
 var shortURL = ''; 
 var longURL = '';
@@ -111,7 +117,6 @@ function parseHTML(){
    verify();
 }
 
-
 function verify(){
 
   var query = "SELECT * FROM promotions WHERE `longURL` = '"+longURL+"'";
@@ -145,7 +150,7 @@ function verify(){
         Response.write('Skipping Entry, trying tweet again');
         // try tweeting again
         shortURL = row.shortURL;
-        tweet();
+        loadImage();        
       }else{
         console.log('Inserting Entry');
         // console.log(row);
@@ -219,44 +224,79 @@ function tweet(){
       access_token_secret: process.env.twitter_access_token_secret
     } );
 
-    var tweet = { status: statusUpdate( category, description, shortURL ) } // this is the tweet message
+    if( amazonImg != '' ){
 
-    console.log(tweet);
+    	// Process Media
 
-    Response.write( JSON.stringify(tweet) );
-   
-    // T.post('statuses/update', tweet, tweeted) // this is how we actually post a tweet ,again takes three params 'statuses/update' , tweet message and a call back function
+	    // open a file called "lenna.png" 
+		Jimp.read(amazonImg).then(function (image) {
+		    // do stuff with the image 
 
-    // 
-	// post a tweet with media 
-	// 
-	var b64content = fs.readFileSync('./src/public/assets/img/nickel.jpg', { encoding: 'base64' })
-	 
-	// first we must post the media to Twitter 
-	T.post('media/upload', { media_data: b64content }, function (err, data, response) {
-	  // now we can assign alt text to the media, for use by screen readers and 
-	  // other text-based presentations and interpreters 
-	  var mediaIdStr = data.media_id_string
-	  var meta_params = { media_id: mediaIdStr, alt_text: { text: description } }
+		    Jimp.read('./src/public/assets/img/twitter-circle.png').then(function (src) {
+		
+		    Jimp.loadFont(Jimp.FONT_SANS_32_BLACK).then(function (font) {
+		    
+		    	image.composite( src, 8, ( image.bitmap.height - 40 ) )
+		    		.print(font, 48, ( image.bitmap.height - 44 ), "@"+process.env.twitter_handle )
+		    		.write('./src/public/assets/img/image.processed.jpg', function(){
 
-	  console.log(mediaIdStr);
-	 
-	  T.post('media/metadata/create', meta_params, function (err, data, response) {
-	    if (!err) {
-	      // now we can reference the media and post a tweet (media will attach to the tweet) 
-	      // var params = { status: 'loving life #nofilter', media_ids: [mediaIdStr] }
+	    				// 
+						// post a tweet with media 
+						// 
+						var b64content = fs.readFileSync('./src/public/assets/img/image.processed.jpg', { encoding: 'base64' })
 
-	      var tweet = { status: statusUpdate( category, description, shortURL ), media_ids: [mediaIdStr] } // this is the tweet message
-	 
-	      T.post('statuses/update', tweet, tweeted)
-	    }else{
-	    	// error with media create
-	    	console.log('error creating meta data');
-	    }
-	  })
-	})
+						// console.log(b64content);
+						 
+						// first we must post the media to Twitter 
+						T.post('media/upload', { media_data: b64content }, function (err, data, response) {
+						  // now we can assign alt text to the media, for use by screen readers and 
+						  // other text-based presentations and interpreters 
+						  var mediaIdStr = data.media_id_string
+						  var meta_params = { media_id: mediaIdStr, alt_text: { text: description } }
+						 
+						  T.post('media/metadata/create', meta_params, function (err, data, response) {
+						    if (!err) {
+						      
+						      // now we can reference the media and post a tweet (media will attach to the tweet) 
+						      // this is the tweet message
+						      var tweet = { status: statusUpdate( category, description, shortURL ), media_ids: [mediaIdStr] } 
+						 
+						      T.post('statuses/update', tweet, tweeted);
 
-    // Response.end();
+						    }else{
+						    	// error with media create
+						    	console.log('error creating meta data');
+						    }
+						  });
+
+	    				}); // save
+		    	
+				});
+
+		    });
+
+		    }).catch(function (err) {
+			    // handle an exception 
+
+			});
+
+		}).catch(function (err) {
+		    // handle an exception 
+
+		    // 
+			// post a tweet without media 
+			// 
+			// var tweet = { status: statusUpdate( category, description, shortURL ) } // this is the tweet message
+		 	// console.log(tweet);
+			// Response.write( JSON.stringify(tweet) );
+		    // T.post('statuses/update', tweet, tweeted) // this is how we actually post a tweet ,again takes three params 'statuses/update' , tweet message and a call back function
+
+		});
+
+    }
+    
+	// end with no tweet is sent
+	Response.end();
 
     function tweeted(err, data, response) {
 
@@ -304,21 +344,53 @@ function tweet(){
 
     }
 
-    Response.end();
+    // Response.end();
 
     } // this is the call back function which does something if the post was successful or unsuccessful.
 
 } // end tweet
+
+function loadImage(){
+
+	// https://www.amazon.com/gp/mpc/A13KVL6YNJG635
+
+    // The structure of our request call
+    // The first parameter is our URL
+    // The callback function takes 3 parameters, an error, response status code and the html
+
+    request(amazonURL, function(error, response, html){
+
+        // First we'll check to make sure no errors occurred when making the request
+
+        if(!error){
+            // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
+
+            var $ = cheerio.load(html);
+
+            // Finally, we'll define the variables we're going to capture
+
+            // console.log(json);
+
+            $('td.product-list-table-col img').filter(function(){
+                var data = $(this);
+                
+                amazonImg = data[0].attribs.src.replace('._SL160_','');
+
+                console.log(amazonImg);
+                
+            });
+
+            tweet();
+        }
+    })
+
+}
 
 function statusUpdate( category, description, shortURL ){
 
   var statusUpdate = '';
 
   var optionalTag = (getRandomRange(0,tags.length) > 5)?' '+ tags[getRandomRange(0,tags.length)] +' ':' ';
-
-  // console.log(getRandomRange(0,tags.length));
-
-  // console.log(tags[getRandomRange(0,tags.length)]);
 
   var maxLength = 139 - ( category.length + 2 + shortURL.length + optionalTag.length );
 
