@@ -27,13 +27,18 @@ var rawHtml = '<div id="" class="container bg-no-repeat associates" style="width
 app.set('port', (process.env.PORT || 5000));
 
 // views is directory for all template files
-app.set('views', __dirname + '/views');
-app.set('view engine', 'ejs');
+// app.set('views', __dirname + '/views');
+// app.set('view engine', 'ejs');
 
 app.get('/', function(request, response) {
   // Start process
   parseHTML();
-  response.render('pages/index')
+  // response.render('pages/index')
+  response.send( 'Running' );
+});
+
+app.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
 });
 
 function parseHTML(){
@@ -112,6 +117,8 @@ function verify(){
 
   // console.log(query);
 
+  var db = new sqlite3.Database('./src/data/database.db');
+
   db.get(query, function(err, row) {
       
       if (err){
@@ -147,6 +154,8 @@ function verify(){
 
 function insert(){
 
+  var db = new sqlite3.Database('./src/data/database.db');
+
   db.serialize(function() {
 
     var stmt = db.prepare("INSERT INTO `promotions`(`ID`,`category`,`description`,`amazonURL`,`longURL`,`shortURL`,`date_created`) VALUES (NULL,(?),(?),(?),(?),(?), datetime('now') );");
@@ -156,6 +165,8 @@ function insert(){
     stmt.finalize();
 
   });
+
+  db.close();
 
   shortenURL();
   
@@ -169,17 +180,21 @@ function shortenURL(){
   .then(function(response) {
     // Do something with data 
     shortURL = response.data.url;
+
+    var db = new sqlite3.Database('./src/data/database.db');
     
     db.serialize(function() {
   
-    // UPDATE `promotions` SET `shortURL`=? WHERE `_rowid_`='7';
-    var stmt = db.prepare("UPDATE `promotions` SET `shortURL`=(?), `date_updated` = datetime('now') WHERE `longURL`= (?);");
-    
-    stmt.run( shortURL, longURL );
-    
-    stmt.finalize();
+      // UPDATE `promotions` SET `shortURL`=? WHERE `_rowid_`='7';
+      var stmt = db.prepare("UPDATE `promotions` SET `shortURL`=(?), `date_updated` = datetime('now') WHERE `longURL`= (?);");
+      
+      stmt.run( shortURL, longURL );
+      
+      stmt.finalize();
 
-  });
+    });
+
+    db.close();
 
     tweet();
 
@@ -194,11 +209,11 @@ function shortenURL(){
 function tweet(){
 
     var T = new Twit( {
-  consumer_key: process.env.twitter_consumer_key,
-  consumer_secret: process.env.twitter_consumer_secret,
-  access_token: process.env.twitter_access_token,
-  access_token_secret: process.env.twitter_access_token_secret
-} );
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
 
     var tweet = { status: statusUpdate( category, description, shortURL ) } // this is the tweet message
 
@@ -212,6 +227,8 @@ function tweet(){
 
       console.log(err.message);
 
+      var db = new sqlite3.Database('./src/data/database.db');
+
       db.serialize(function() {
     
         // UPDATE `promotions` SET `shortURL`=? WHERE `_rowid_`='7';
@@ -223,11 +240,15 @@ function tweet(){
 
       });
 
+      db.close();
+
     }else{
 
       console.log("Voila It worked!");
 
       console.log(response.statusMessage);
+
+      var db = new sqlite3.Database('./src/data/database.db');
 
       db.serialize(function() {
     
@@ -240,9 +261,11 @@ function tweet(){
 
       });
 
+      db.close();
+
     }
 
-    db.close();
+    
 
     } // this is the call back function which does something if the post was successful or unsuccessful.
 
