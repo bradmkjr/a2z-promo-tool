@@ -1,9 +1,3 @@
-// var configTwitter = require("./components/config.twitter.js");
-// var configBitly = require("./components/config.bitly.js");
-// var configGeneral = require("./components/config.general.js");
-
-// var sys = require('util');
-
 var express = require('express');
 var app = express();
 
@@ -204,8 +198,6 @@ function shortenURL(){
 
 }
 
-
-
 function tweet(){
 
     var T = new Twit( {
@@ -264,8 +256,6 @@ function tweet(){
       db.close();
 
     }
-
-    
 
     } // this is the call back function which does something if the post was successful or unsuccessful.
 
