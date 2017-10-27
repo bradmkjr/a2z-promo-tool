@@ -3,3 +3,4 @@ src/components/config.bitly.js
 src/components/config.twitter.js
 src/components/config.general.js
 src/public/assets/img/image.processed.jpg
+npm-debug.log
