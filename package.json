@@ -5,10 +5,16 @@
   "main": "app.js",
   "dependencies": {
     "bitly": "^4.1.1",
+    "casper": "^0.1.1",
+    "casperjs": "^1.1.4",
     "cheerio": "^1.0.0-rc.2",
     "express": "^4.16.2",
     "htmlparser": "^1.7.7",
     "jimp": "^0.2.28",
+    "phantomjs": "^2.1.7",
+    "phantomjs-prebuilt": "^2.1.15",
+    "querystring": "^0.2.0",
+    "spooky": "^0.2.5",
     "sqlcachedb": "^1.1.1",
     "sqlite3": "^3.1.13",
     "twit": "^2.2.9"
