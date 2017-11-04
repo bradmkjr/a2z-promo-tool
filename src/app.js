@@ -65,7 +65,8 @@ app.set('port', (process.env.PORT || 5000));
 app.get('/', function(req, res) {
   res.writeHead(200, {'Content-Type': 'text/html'}); 
 
-  res.send('Go AWay');
+  res.write('Go AWay');
+  res.end();
 });
 
 app.get('/friday', function(req, res) {
