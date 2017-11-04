@@ -69,6 +69,163 @@ app.get('/', function(req, res) {
   res.end();
 });
 
+
+app.get('/create', function(req, res) {
+  // Start process
+  // parseHTML();
+  // response.render('pages/index')
+  // response.send( 'Running' );
+
+  return;
+
+  res.writeHead(200, {'Content-Type': 'text/html'}); 
+
+  var T = new Twit( {
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
+
+
+  	var name = 'Coupons-For-Everyone';
+  	var description = 'Great Coupons and Discount Codes for Everyone.';
+
+  	//
+	//  Creates a new list for the authenticated user. Note that you can create up to 1000 lists per account.
+	//
+	T.post('lists/create', { name: name, description: description  }, function(error, data, response) {
+	  // console.log(data);
+	  // console.log(data.statuses.length);
+	  // console.log(response);
+
+	  if( data != undefined && !error && response.statusCode == 200 ){
+	  	// res.write(JSON.stringify(data));	
+	  	
+ 		  console.log(data);
+
+	  	
+	  } // end if
+	  else if( error )
+	  {
+		console.log(error);	
+		console.log(data);
+		console.log(response.statusCode);
+	  }
+	  
+
+	}); // end search/tweets
+
+
+}); // end get /coupon
+
+app.get('/coupon', function(req, res) {
+  // Start process
+  // parseHTML();
+  // response.render('pages/index')
+  // response.send( 'Running' );
+
+  res.writeHead(200, {'Content-Type': 'text/html'}); 
+
+  var T = new Twit( {
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
+
+  	//
+	//  search twitter for all tweets containing the word '#coupon'
+	//
+	T.get('search/tweets', { q: '#coupon', count: 1, result_type: 'recent' }, function(error, data, response) {
+	  // console.log(data);
+	  // console.log(data.statuses.length);
+	  // console.log(response);
+
+	  if( data != undefined && !error && response.statusCode == 200 && data.statuses.length != 0 ){
+	  	// res.write(JSON.stringify(data));	
+	  	
+	  	var status = data.statuses[0];
+
+	  	console.log(status.text);
+	  	res.write( 'Tweet: ' + status.text );	
+
+	  	// res.write( status.user.id_str );	
+	  	res.write( 'User: ' + status.user.name );	
+	  	// console.log( status.user.screen_name );	
+	  	res.write( 'Screen Name: ' + status.user.screen_name );	
+
+	  	T.post('friendships/create', { user_id: status.user.id_str }, function(error, data, response) {
+
+	  		// console.log(data);
+	  		// console.log(response);
+
+	  		if( data != undefined && !error && response.statusCode == 200 ){
+
+	  			// console.log(response);
+	  			console.log(data.following);
+	  			res.write( 'Following Status: ' + data.following );	
+
+  				// id: 926944341066596400,
+  				// id_str: '926944341066596352',
+				// name: 'Coupons-For-Everyone',
+				// uri: '/vannscoupons/lists/coupons-for-everyone',
+
+				// id: 62594950,
+				//  id_str: '62594950',
+				//  name: 'Promo Deals & Offers',
+				//  screen_name: 'vannscoupons',
+
+
+				T.post('lists/members/create', { list_id: '926944341066596352', owner_id: '62594950', user_id: status.user.id_str, screen_name: status.user.screen_name }, function(error, data, response) {
+
+			  		// console.log(data);
+			  		// console.log(response);
+
+			  		if( data != undefined && !error && response.statusCode == 200 ){
+
+			  			// console.log(response);
+			  			console.log( data.member_count );
+			  			res.write( 'Member Count: '+data.member_count );	
+			  			// console.log(data);
+
+			  		}
+			  		else if( error )
+			  		{
+						console.log(error);	  			
+			  		}
+
+			  		res.end();	
+
+			  	});
+
+
+
+	  		}
+	  		else if( error )
+	  		{
+				console.log(error);	  			
+	  		}
+
+	  		// res.end();	
+
+	  	});
+	  	
+	  } // end if
+	  else if( error )
+	  {
+		console.log(error);	
+		console.log(data);
+		console.log(response.statusCode);
+	  }
+	  
+
+	}); // end search/tweets
+
+
+}); // end get /coupon
+
+
 app.get('/friday', function(req, res) {
   // Start process
   // parseHTML();
