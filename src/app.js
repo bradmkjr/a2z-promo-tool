@@ -87,9 +87,9 @@ app.get('/promote', function(req, res) {
 
   // a very #warmwelcome to #newestfollowers!
 
-  var text = "{{Welcome:Greetings:Hello}} to the {{newest:recent:favorite:best:awesome}} {{followers:friends:fans:Tweeters}} #{{NewestFollowers:RecentFollowers:FavoriteFollowers:TwitterFollowers:FollowBack}} ";
+  var text = "{{Warm Welcome|Greetings|Hello}} to the {{newest|most recent|our Favorite|best|most awesome}} {{followers|friends|fans|Tweeters}} #{{NewestFollowers|RecentFollowers|FavoriteFollowers|TwitterFollowers|FollowBack}} ";
 
-  var jumble = pj.jumble(text);
+  var jumble = pj.build(text);
   // console.log(jumble); // Randomized Output
   // res.write(jumble);
 
