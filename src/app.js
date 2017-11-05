@@ -5,8 +5,7 @@ var app = express();
 var Jimp = require("jimp");
 var Bitly = require('bitly');
 var Twit = require('twit');
-// var sqlite3 = require('sqlite3').verbose();
-// var db = new sqlite3.Database('./src/data/database.db');
+var sqlite3 = require('sqlite3').verbose();
 
 var cache = require('sqlcachedb');
 
@@ -23,6 +22,8 @@ var request = require('request');
 var Spooky = require('spooky');
 
 var querystring = require('querystring');
+
+var pj = require('phrasejumble');
 
 // require('request-debug')(request);
 
@@ -68,6 +69,167 @@ app.get('/', function(req, res) {
   res.write('Go AWay');
   res.end();
 });
+
+app.get('/promote', function(req, res) {
+  // Start process
+  // parseHTML();
+  // response.render('pages/index')
+  // response.send( 'Running' );
+
+  res.writeHead(200, {'Content-Type': 'text/html'}); 
+
+  var T = new Twit( {
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
+
+  // a very #warmwelcome to #newestfollowers!
+
+  var text = "{{Welcome:Greetings:Hello}} to the {{newest:recent:favorite:best:awesome}} {{followers:friends:fans:Tweeters}} #{{NewestFollowers:RecentFollowers:FavoriteFollowers:TwitterFollowers:FollowBack}} ";
+
+  var jumble = pj.jumble(text);
+  // console.log(jumble); // Randomized Output
+  // res.write(jumble);
+
+  var db = new sqlite3.Database('./src/data/database.db');
+
+  db.serialize(function(){
+
+  	db.all("SELECT * FROM followers WHERE `promoted` == '' ORDER BY RANDOM() LIMIT 4", function(err, rows) {
+
+  		var followers = [];
+
+  		for( i=0; i < rows.length; i++){
+  			// console.log(rows[i].screen_name);
+
+  			followers.push('@'+rows[i].screen_name);
+  		}
+
+  		// console.log(followers);
+
+  		var tweet = jumble+followers.join(', ');
+
+  		console.log(tweet);
+  		res.write(tweet);
+
+  		var config = { status: tweet } 
+
+  		T.post('statuses/update', config, function(err, data, response){
+
+	    if(err){
+
+	      console.log("Something went wrong!");
+
+	      console.log(err.message);
+	   
+	    }else{
+
+	      // res.write('Voila It worked!');
+
+	      for( i=0; i < rows.length; i++){
+  			// console.log(rows[i].screen_name);
+
+	  			var stmt = db.prepare('UPDATE `followers` SET `promoted` = datetime("now"),`date_updated` =datetime("now") WHERE `ID` = (?);');
+				stmt.run( rows[i].ID );
+				stmt.finalize();
+	  			
+	  		}
+
+	  		res.write('Voila It worked!');
+	  		
+	  		res.end(); 
+	  		db.close();
+	     
+	    }
+
+
+	    }); // this is how we actually post a tweet ,again takes three params 'statuses/update' , tweet message and a call back function
+
+
+  		// console.log('INSERT OR REPLACE INTO `followers` (`ID`,`promoted`,`date_updated`) VALUES ( (SELECT `ID` FROM `followers` WHERE `ID` IN ( '+ids+' ) ), datetime("now"), datetime("now") );');
+
+  		
+  	});
+
+  });
+
+  	
+
+}); // end get /promote
+
+app.get('/followers', function(req, res) {
+  // Start process
+  // parseHTML();
+  // response.render('pages/index')
+  // response.send( 'Running' );
+
+  res.writeHead(200, {'Content-Type': 'text/html'}); 
+
+  var T = new Twit( {
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
+
+  	//
+	//  search twitter for all tweets containing the word '#coupon'
+	//
+	T.get('followers/list', { user_id: '62594950', count: 10, skip_status: 1 }, function(error, data, response) {
+	  // console.log(data);
+	  // console.log(data.statuses.length);
+	  // console.log(response);
+
+	  if( data != undefined && !error && response.statusCode == 200 && data.users.length != 0 ){
+
+	  	// res.write(JSON.stringify(data));	
+	  	
+	  	// console.log(data.users[0]);
+
+	  	console.log( 'Followers: ' + data.users.length );
+
+	  	var db = new sqlite3.Database('./src/data/database.db');
+
+	  	for( i=0; i < data.users.length; i++){
+
+	  		var follower = data.users[i];
+
+		  	var stmt = db.prepare('INSERT OR REPLACE INTO `followers` (`ID`,`id_str`,`name`,`screen_name`,`followers_count`,`friends_count`,`following`,`date_created`,`date_updated`) VALUES ( (SELECT `ID` FROM `followers` WHERE `id_str` == (?)), (?), (?), (?), (?), (?), (?), COALESCE((SELECT `date_created` FROM `followers` WHERE `id_str` == (?)), datetime("now") ), datetime("now") );');
+
+			stmt.run( follower.id_str, follower.id_str, follower.name, follower.screen_name, follower.followers_count, follower.friends_count, process.env.twitter_handle, follower.id_str );
+
+			stmt.finalize();
+
+			console.log(follower.name);
+			console.log(follower.screen_name);
+
+			res.write(JSON.stringify(follower.screen_name));	
+
+	  	}
+
+		db.close();
+	  	
+	  	res.end();
+	  	
+	  } // end if
+	  else if( error )
+	  {
+		console.log(error);	
+		console.log(data);
+		console.log(response.statusCode);
+
+		res.write(error);
+		res.end();
+	  }
+	  
+
+	}); // end followers/list
+
+
+}); // end get /followers
+
 
 
 app.get('/create', function(req, res) {

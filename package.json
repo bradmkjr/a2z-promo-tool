@@ -13,6 +13,7 @@
     "jimp": "^0.2.28",
     "phantomjs": "^2.1.7",
     "phantomjs-prebuilt": "^2.1.15",
+    "phrasejumble": "git+https://git@github.com/bradmkjr/phrasejumble.git",
     "querystring": "^0.2.0",
     "spooky": "^0.2.5",
     "sqlcachedb": "^1.1.1",
