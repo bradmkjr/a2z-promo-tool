@@ -138,7 +138,7 @@ app.get('/promote', function(req, res) {
 	  		}
 
 	  		res.write('Voila It worked!');
-	  		
+
 	  		res.end(); 
 	  		db.close();
 	     
@@ -250,8 +250,8 @@ app.get('/create', function(req, res) {
     } );
 
 
-  	var name = 'Coupons-For-Everyone';
-  	var description = 'Great Coupons and Discount Codes for Everyone.';
+  	var name = 'Free-Shipping-Codes';
+  	var description = 'All the best coupons and codes to get #FREEShipping.';
 
   	//
 	//  Creates a new list for the authenticated user. Note that you can create up to 1000 lists per account.
@@ -280,6 +280,113 @@ app.get('/create', function(req, res) {
 
 
 }); // end get /coupon
+
+app.get('/shipping', function(req, res) {
+  // Start process
+  // parseHTML();
+  // response.render('pages/index')
+  // response.send( 'Running' );
+
+  res.writeHead(200, {'Content-Type': 'text/html'}); 
+
+  var T = new Twit( {
+      consumer_key: process.env.twitter_consumer_key,
+      consumer_secret: process.env.twitter_consumer_secret,
+      access_token: process.env.twitter_access_token,
+      access_token_secret: process.env.twitter_access_token_secret
+    } );
+
+  	//
+	//  search twitter for all tweets containing the word '#coupon'
+	//
+	T.get('search/tweets', { q: '#freeshipping #coupon', count: 1, result_type: 'recent' }, function(error, data, response) {
+	  // console.log(data);
+	  // console.log(data.statuses.length);
+	  // console.log(response);
+
+	  if( data != undefined && !error && response.statusCode == 200 && data.statuses.length != 0 ){
+	  	// res.write(JSON.stringify(data));	
+	  	
+	  	var status = data.statuses[0];
+
+	  	console.log(status.text);
+	  	res.write( 'Tweet: ' + status.text );	
+
+	  	// res.write( status.user.id_str );	
+	  	res.write( 'User: ' + status.user.name );	
+	  	// console.log( status.user.screen_name );	
+	  	res.write( 'Screen Name: ' + status.user.screen_name );	
+
+	  	T.post('friendships/create', { user_id: status.user.id_str }, function(error, data, response) {
+
+	  		// console.log(data);
+	  		// console.log(response);
+
+	  		if( data != undefined && !error && response.statusCode == 200 ){
+
+	  			// console.log(response);
+	  			console.log(data.following);
+	  			res.write( 'Following Status: ' + data.following );	
+
+  				// id: 927219569646649300,
+				// id_str: '927219569646649344',
+				// name: 'Free-Shipping-Codes',
+				// uri: '/vannscoupons/lists/free-shipping-codes',
+
+
+				// id: 62594950,
+				//  id_str: '62594950',
+				//  name: 'Promo Deals & Offers',
+				//  screen_name: 'vannscoupons',
+
+
+				T.post('lists/members/create', { list_id: '927219569646649344', owner_id: '62594950', user_id: status.user.id_str, screen_name: status.user.screen_name }, function(error, data, response) {
+
+			  		// console.log(data);
+			  		// console.log(response);
+
+			  		if( data != undefined && !error && response.statusCode == 200 ){
+
+			  			// console.log(response);
+			  			console.log( data.member_count );
+			  			res.write( 'Member Count: '+data.member_count );	
+			  			// console.log(data);
+
+			  		}
+			  		else if( error )
+			  		{
+						console.log(error);	  			
+			  		}
+
+			  		res.end();	
+
+			  	});
+
+
+
+	  		}
+	  		else if( error )
+	  		{
+				console.log(error);	  			
+	  		}
+
+	  		// res.end();	
+
+	  	});
+	  	
+	  } // end if
+	  else if( error )
+	  {
+		console.log(error);	
+		console.log(data);
+		console.log(response.statusCode);
+	  }
+	  
+
+	}); // end search/tweets
+
+
+}); // end get /shipping
 
 app.get('/coupon', function(req, res) {
   // Start process
